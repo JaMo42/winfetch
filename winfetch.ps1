@@ -1,3 +1,5 @@
+# https://github.com/JaMo42/winfetch
+
 # Settings
 # Text colors
 $normalcolor = "Gray"
