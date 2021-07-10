@@ -15,12 +15,8 @@ $yellow = "Yellow"
 function get-uptime {
   # Subtract time of last boot from current time
   $uptime = (
-    (Get-WmiObject Win32_OperatingSystem).ConvertToDateTime(
-      (Get-WmiObject Win32_OperatingSystem).LocalDateTime
-    ) - 
-    (Get-WmiObject Win32_OperatingSystem).ConvertToDateTime(
-      (Get-WmiObject Win32_OperatingSystem).LastBootUpTime
-    )
+    (Get-CimInstance -ClassName Win32_OperatingSystem).LocalDateTime - 
+    (Get-CimInstance -ClassName Win32_OperatingSystem).LastBootUpTime
   );
   # Format
   $formatted = ""
@@ -35,26 +31,22 @@ function get-uptime {
 }
 
 function get-packages {
-  $oldpref = $ErrorActionPreference;
-  $ErrorActionPreference = "stop";
-  try {
-    # If choco exists, get the number of packages
-    if (Get-Command choco) {
-      return "$($(choco list --local-only -r).Count) (choco)";
-    }
-  } Catch {
+  # If choco exists, get the number of packages
+  if (Get-Command choco -ErrorAction SilentlyContinue) {
+    return "$($(choco list --local-only -r).Count) (choco)";
+  } elseif (Get-Command winget -ErrorAction SilentlyContinue) {
+    return "$($(winget list).Count - 3) (winget)";
+  } else {
     # Otherwise return default
     return "N/A";
-  } Finally {
-    $ErrorActionPreference = $oldpref;
   }
 }
 
-[string]$user = $env:UserName.ToLower();
-[string]$hostname = $env:ComputerName.ToLower();
-[string]$os = (Get-WmiObject Win32_OperatingSystem).Caption + " " +
-              (Get-WmiObject Win32_OperatingSystem).OSArchitecture
-[string]$kernel = (Get-WmiObject  Win32_OperatingSystem).Version;
+[string]$user = $env:UserName;
+[string]$hostname = $env:ComputerName;
+[string]$os = (Get-CimInstance -ClassName Win32_OperatingSystem).Caption + " " +
+              (Get-CimInstance -ClassName Win32_OperatingSystem).OSArchitecture
+[string]$kernel = (Get-CimInstance -ClassName  Win32_OperatingSystem).Version;
 [string]$uptime = get-uptime;
 [string]$packages = get-packages;
 [string]$shell = "Powershell $($PSVersionTable.PSVersion.ToString())";
